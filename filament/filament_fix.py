@@ -40,7 +40,7 @@ class FilamentConfig(Config):
 
     #RPN_ANCHOR_SCALES = (128, 256, 512)
 
-    STEPS_PER_EPOCH = 100 #sasaki modifyed
+    STEPS_PER_EPOCH = 1000
 
     #BACKBONE = "resnet50"
 
@@ -329,7 +329,7 @@ if __name__ == '__main__':
         print("Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=4,#sasaki modifyed
+                    epochs=40,
                     layers='heads',
                     augmentation=augmentation)
                 # Training - Stage 2
@@ -337,7 +337,7 @@ if __name__ == '__main__':
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=12,#sasaki modifyed
+                    epochs=120,
                     layers='4+',
                     augmentation=augmentation)
 
@@ -346,7 +346,7 @@ if __name__ == '__main__':
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE / 10,
-                    epochs=16,#sasaki modifyed
+                    epochs=160,
                     layers='all',
                     augmentation=augmentation)
     elif args.command == "evaluate":
