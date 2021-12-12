@@ -40,8 +40,6 @@ class FilamentConfig(Config):
 
     #RPN_ANCHOR_SCALES = (128, 256, 512)
 
-    STEPS_PER_EPOCH = 1000
-
     #BACKBONE = "resnet50"
 
 

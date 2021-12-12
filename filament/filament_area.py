@@ -42,7 +42,7 @@ class FilamentConfig(Config):
 
     BACKBONE = "resnet50"
 
-    STEPS_PER_EPOCH = 1000 
+    STEPS_PER_EPOCH = 1000
 
     #IMAGE_MAX_DIM = 768
 
@@ -53,7 +53,7 @@ class FilamentConfig(Config):
 
 
 class FilamentDataset(utils.Dataset):
-    def load_coco(self, dataset_dir, subset=None,return_coco=False, year=None):
+    def load_coco(self, dataset_dir, subset=None,return_coco=False, year=2013):
         if subset=='train':
             coco = COCO("{}/annotations_area/datasets_{}.json".format(dataset_dir, subset))
             if subset == "minival" or subset == "valminusminival":
@@ -266,7 +266,7 @@ if __name__ == '__main__':
                         metavar="<image count>",
                         help='Images to use for evaluation (default=500)')
     parser.add_argument('--year', required=False,
-                        default=2012,
+                        default=2013,
                         metavar="<image count>",
                         help='Images to use for evaluation (default=500)')
     args = parser.parse_args()
@@ -317,12 +317,12 @@ if __name__ == '__main__':
         # Training dataset. Use the training set and 35K from the
         # validation set, as as in the Mask RCNN paper.
         dataset_train = FilamentDataset()
-        dataset_train.load_coco(args.dataset,"train")
+        dataset_train.load_coco(args.dataset,"train",year=args.year)
         dataset_train.prepare()
 
         # Validation dataset
         dataset_val = FilamentDataset()
-        dataset_val.load_coco(args.dataset,"val" )
+        dataset_val.load_coco(args.dataset,"val",year=args.year)
         dataset_val.prepare()
 
         # Image Augmentation
@@ -333,7 +333,7 @@ if __name__ == '__main__':
         print("Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=40,
+                    epochs=40, #sasaki modifyed
                     layers='heads',
                     augmentation=augmentation)
                 # Training - Stage 2
@@ -341,7 +341,7 @@ if __name__ == '__main__':
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=120,
+                    epochs=120,#sasaki modifyed
                     layers='4+',
                     augmentation=augmentation)
 
@@ -350,7 +350,7 @@ if __name__ == '__main__':
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE / 10,
-                    epochs=160,
+                    epochs=160, #sasaki modifyed,
                     layers='all',
                     augmentation=augmentation)
     elif args.command == "evaluate":

@@ -32,8 +32,7 @@ from mrcnn import utils
 #  Visualization
 ############################################################
 
-def display_images(images, titles=None, cols=4, cmap=None, norm=None,
-                   interpolation=None):
+def display_images(images, titles=None, cols=4, cmap=None, norm=None, interpolation=None):
     """Display the given set of images, optionally with titles.
     images: list or array of image tensors in HWC format.
     titles: optional. A list of titles to display with each image.

@@ -1,3 +1,7 @@
+# Excute example
+# In /maskrcnn/
+# python3 filament/inspect_model.py logs/filamentYYYYMMDDX9999
+# python3 filament
 import os
 import sys
 import random
@@ -31,16 +35,16 @@ from mrcnn import visualize
 from mrcnn.visualize import display_images
 import mrcnn.model as modellib
 from mrcnn.model import log
-import filament_fix
+import filament_area
 
 args = sys.argv
 #print("args:", args)
 #sys.exit()
 MODEL_DIR =  os.path.join(ROOT_DIR, "logs")
-MODEL_PATH  = args[1]
+MODEL_PATH  = "logs/" + args[1]
 
-config = filament_fix.FilamentConfig()
-FILAMENT_DIR = "/home/maskrcnn/filament/"
+config = filament_area.FilamentConfig()
+FILAMENT_DIR = "/home/maskrcnn/filament"
 
 #SAVE_DIR = "/home/maskrcnn/filament/result/predictions/"
 
@@ -62,7 +66,7 @@ def get_ax(rows=1, cols=1, size=16):
 def main():
     config = InferenceConfig()
     config.display()
-    dataset  = filament_fix.FilamentDataset()
+    dataset  = filament_area.FilamentDataset()
     dataset.load_coco(FILAMENT_DIR,"val")
     dataset.prepare()
     print("Images: {}\nClasses: {}".format(len(dataset.image_ids), dataset.class_names))
@@ -74,11 +78,10 @@ def main():
     model.load_weights(weights_path, by_name=True)
 
     image_id = random.choice(dataset.image_ids)
-    image, image_meta, gt_class_id, gt_bbox, gt_mask =\
-        modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
+    image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
     info = dataset.image_info[image_id]
-    print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id, 
-                                        dataset.image_reference(image_id)))
+    print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id, dataset.image_reference(image_id)))
+    print("model filen name: {}".format(MODEL_PATH))
     # Run object detection
     results = model.detect([image], verbose=1)
 

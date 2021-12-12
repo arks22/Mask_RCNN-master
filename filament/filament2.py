@@ -1,7 +1,7 @@
 """
 Mask R-CNN学習用スクリプト
 学習用
-ex)python3 filament/filament2.py train --dataset=filament --model=imagenet
+ex)python3 filament/filament2.py train --dataset filament --model imagenet
 検証用
 ex)python3 filament/filament2.py evaluate --dataset=filament --model=last
 """
@@ -103,7 +103,6 @@ class FilamentDataset(utils.Dataset):
             return mask, class_ids
         else:
             return super(FilamentDataset, self).load_mask(image_id)
-
     def annToRLE(self, ann, height, width):
         segm = ann['segmentation']
         if isinstance(segm, list):
