@@ -1,9 +1,12 @@
 """
-Mask R-CNN学習用スクリプト
+安藤さん卒研の実験1~2のスクリプト
+
 学習用
-ex)python3 filament/filament2.py train --dataset filament --model imagenet
+python3 filament/filament2.py train --dataset=filament --model imagenet
 検証用
-ex)python3 filament/filament2.py evaluate --dataset=filament --model=last
+python3 filament/filament2.py evaluate --dataset=filament --model=imagent
+predict画像出力はinspect*.pyを実行
+
 """
 
 import os

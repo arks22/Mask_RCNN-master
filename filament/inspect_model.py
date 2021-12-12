@@ -1,7 +1,10 @@
-# Excute example
-# In /maskrcnn/
-# python3 filament/inspect_model.py logs/filamentYYYYMMDDX9999
-# python3 filament
+"""
+predict画像出力用のスクリプト
+/logs/学習実行日時/ ディレクトリ中のh5ファイルを引数で指定
+
+$ python3 filament/inspect_model.py filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5
+"""
+
 import os
 import sys
 import random
@@ -78,6 +81,8 @@ def main():
     model.load_weights(weights_path, by_name=True)
 
     image_id = random.choice(dataset.image_ids)
+    #image_id = ""
+
     image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
     info = dataset.image_info[image_id]
     print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id, dataset.image_reference(image_id)))
