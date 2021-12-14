@@ -1,10 +1,11 @@
 # Data files and directories common in repo root
-filament/annotations*
-filament/result
-filament/result
-filament/train_fits
-filament/train_jpg
-filament/val*
+dataset/
+result/
+logs/
+annotations*/
+train_fits/
+train_jpg/
+val_*/
 
 train/
 
