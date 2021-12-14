@@ -42,12 +42,9 @@ class FilamentConfig(Config):
 
     BACKBONE = "resnet50"
 
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 10 #時短用
 
     #IMAGE_MAX_DIM = 768
-
-
-
 
 
 
@@ -56,64 +53,38 @@ class FilamentDataset(utils.Dataset):
     def load_coco(self, dataset_dir, subset=None,return_coco=False, year=2013):
         if subset=='train':
             coco = COCO("{}/annotations_area/datasets_{}.json".format(dataset_dir, subset))
-            if subset == "minival" or subset == "valminusminival":
-                        subset = "val"
             image_dir = "{}/{}_jpg".format(dataset_dir, subset)
 
-            class_ids = sorted(coco.getCatIds())
-            # print("class:{}".format(class_ids))
-            image_ids = list(coco.imgs.keys())
-            # print("image:{}".format(image_ids))
-
-            #self.add_class("filament", 1, "filament")
-        
-            for i in class_ids:
-                self.add_class("coco", i, coco.loadCats(i)[0]["name"])
-        
-            # ここまではおそらくOK
-            for i in image_ids:
-                #print(i, "\n")
-                self.add_image(
-                    "coco", image_id=i,
-                    path=os.path.join(image_dir, coco.imgs[i]['file_name']),
-                    width=coco.imgs[i]["width"],
-                    height=coco.imgs[i]["height"],
-                    annotations=coco.loadAnns(coco.getAnnIds(
-                        imgIds=[i], catIds=class_ids, iscrowd=None)))
-            #print(self.image_info)
-            #sys.exit()
-            if return_coco:
-                return coco
         else:
             coco = COCO("{}/annotations_area/datasets_{}_{}.json".format(dataset_dir, subset, year))
             if subset == "minival" or subset == "valminusminival":
                         subset = "val"
             image_dir = "{}/{}_jpg_{}".format(dataset_dir, subset, year)
 
-            class_ids = sorted(coco.getCatIds())
-            # print("class:{}".format(class_ids))
-            image_ids = list(coco.imgs.keys())
-            # print("image:{}".format(image_ids))
+        class_ids = sorted(coco.getCatIds())
+        # print("class:{}".format(class_ids))
+        image_ids = list(coco.imgs.keys())
+        # print("image:{}".format(image_ids))
 
-            #self.add_class("filament", 1, "filament")
+        #self.add_class("filament", 1, "filament")
         
-            for i in class_ids:
-                self.add_class("coco", i, coco.loadCats(i)[0]["name"])
+        for i in class_ids:
+            self.add_class("coco", i, coco.loadCats(i)[0]["name"])
         
-            # ここまではおそらくOK
-            for i in image_ids:
-                #print(i, "\n")
-                self.add_image(
-                    "coco", image_id=i,
-                    path=os.path.join(image_dir, coco.imgs[i]['file_name']),
-                    width=coco.imgs[i]["width"],
-                    height=coco.imgs[i]["height"],
-                    annotations=coco.loadAnns(coco.getAnnIds(
-                        imgIds=[i], catIds=class_ids, iscrowd=None)))
-            #print(self.image_info)
-            #sys.exit()
-            if return_coco:
-                return coco
+        for i in image_ids:
+            #print(i, "\n")
+            self.add_image(
+                "coco", image_id=i,
+                path=os.path.join(image_dir, coco.imgs[i]['file_name']),
+                width=coco.imgs[i]["width"],
+                height=coco.imgs[i]["height"],
+                annotations=coco.loadAnns(coco.getAnnIds(
+                    imgIds=[i], catIds=class_ids, iscrowd=None)))
+        #print(self.image_info)
+        #sys.exit()
+        if return_coco:
+            return coco
+
 
     def load_mask(self, image_id):
         # If not a COCO image, delegate to parent class.
@@ -333,7 +304,7 @@ if __name__ == '__main__':
         print("Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=40, #sasaki modifyed
+                    epochs=4, #sasaki modifyed
                     layers='heads',
                     augmentation=augmentation)
                 # Training - Stage 2
@@ -341,7 +312,7 @@ if __name__ == '__main__':
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=120,#sasaki modifyed
+                    epochs=12,#sasaki modifyed
                     layers='4+',
                     augmentation=augmentation)
 
@@ -350,7 +321,7 @@ if __name__ == '__main__':
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE / 10,
-                    epochs=160, #sasaki modifyed,
+                    epochs=16, #sasaki modifyed,
                     layers='all',
                     augmentation=augmentation)
     elif args.command == "evaluate":

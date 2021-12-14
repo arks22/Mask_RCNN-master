@@ -19,6 +19,8 @@ import matplotlib.patches as patches
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("/home/maskrcnn/")
+# Current directory of the project
+CURRENT_DIR = os.dirname(os.path.abspath(__file__));
 
 # Device to load the neural network on.
 # Useful if you're training a model on the same 
@@ -44,10 +46,10 @@ args = sys.argv
 #print("args:", args)
 #sys.exit()
 MODEL_DIR =  os.path.join(ROOT_DIR, "logs")
+FILAMENT_DIR = "/home/maskrcnn/"
 MODEL_PATH  = "logs/" + args[1]
 
 config = filament_area.FilamentConfig()
-FILAMENT_DIR = "/home/maskrcnn/filament"
 
 #SAVE_DIR = "/home/maskrcnn/filament/result/predictions/"
 
@@ -105,5 +107,5 @@ def main():
     log("gt_class_id", gt_class_id)
     log("gt_bbox", gt_bbox)
     log("gt_mask", gt_mask)
-    plt.savefig("/home/maskrcnn/filament/result/predictions/prediction_{}.png".format(info["id"]))
+    plt.savefig("FILAMENT_DIR/result/predictions/prediction_{}.png".format(info["id"]))
 main()
