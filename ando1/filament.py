@@ -16,7 +16,7 @@ import time
 import numpy as np
 import imgaug
 
-ROOT_DIR = os.path.abspath("/home/maskrcnn")
+ROOT_DIR = os.path.abspath("/home/Mask_RCNN_filament")
 CURRENT_DIR = os.getcwd()
 DEFAULT_LOGS_DIR = os.path.join(CURRENT_DIR, "logs")
 DEFAULT_DATASET_DIR = os.path.join(CURRENT_DIR, "dataset")
@@ -37,7 +37,6 @@ import tensorflow as tf
 
 
 class FilamentConfig(Config):
-    # 太陽データを使用して学習するに当たって変更すべきConfigを変更
     # Give the configuration a recognizable name
     NAME = "Filament"
 
@@ -48,7 +47,7 @@ class FilamentConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 1  # ARorQRの2通り＋Background
 
-    RPN_ANCHOR_SCALES = (128, 256, 512)
+    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512) #default
     RPN_ANCHOR_RATIOS = [0.5, 1, 2]
 
     BACKBONE = "resnet50"

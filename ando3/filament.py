@@ -37,7 +37,6 @@ import tensorflow as tf
 
 
 class FilamentConfig(Config):
-    # 太陽データを使用して学習するに当たって変更すべきConfigを変更
     # Give the configuration a recognizable name
     NAME = "Filament"
 
