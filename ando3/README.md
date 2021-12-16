@@ -1,53 +1,20 @@
 # 安藤さん卒研実験3
 
-## configurations(parameters)
-- backbone                       resnet50
-- backbone_strides               [4, 8, 16, 32, 64]
-- batch_size                     1
-- bbox_std_dev                   [0.1 0.1 0.2 0.2]
-- compute_backbone_shape         none
-- detection_max_instances        100
-- detection_min_confidence       0
-- detection_nms_threshold        0.3
-- fpn_classif_fc_layers_size     1024
-- gpu_count                      1
-- gradient_clip_norm             5.0
-- images_per_gpu                 1
-- image_channel_count            3
-- image_max_dim                  1024
-- image_meta_size                14
-- image_min_dim                  800
-- image_min_scale                0
-- image_resize_mode              square
-- image_shape                    [1024 1024    3]
-- learning_momentum              0.9
-- learning_rate                  0.001
-- loss_weights                   {'rpn_class_loss': 1.0, 'mrcnn_bbox_loss': 1.0, 'mrcnn_mask_loss': 1.0, 'mrcnn_class_loss': 1.0, 'rpn_bbox_loss': 1.0}
-- mask_pool_size                 14
-- mask_shape                     [28, 28]
-- max_gt_instances               100
-- mean_pixel                     [123.7 116.8 103.9]
-- mini_mask_shape                (56, 56)
-- name                           filament
-- num_classes                    2
-- pool_size                      7
-- post_nms_rois_inference        1000
-- post_nms_rois_training         2000
-- pre_nms_limit                  6000
-- roi_positive_ratio             0.33
-- **rpn_anchor_ratios**              [0.5, 1, 2]
-- **rpn_anchor_scales**              (128, 256, 512)
-- **rpn_anchor_stride**              1
-- rpn_bbox_std_dev               [0.1 0.1 0.2 0.2]
-- rpn_nms_threshold              0.7
-- rpn_train_anchors_per_image    256
-- steps_per_epoch                1000
-- top_down_pyramid_size          256
-- train_bn                       false
-- train_rois_per_image           200
-- use_mini_mask                  true
-- use_rpn_rois                   true
-- validation_steps               50
-- weight_decay                   0.0001
 
-## dataset
+## Configurations(hyper parameters)
+
+実験2と同様に、小さいアンカースケールを削除
+
+| Parameter              |Value                   |
+|------------------------|------------------------|
+|**RPN_ANCHOR_RATIOS**   |[0.5, 1, 2]             |
+|**RPN_ANCHOR_SCALES**   |(128, 256, 512) |
+|**RPN_ANCHOR_STRIDE**   |1                       |
+
+## Dataset
+ピクセル面積600以下のフィラメントを教師データから除外
+
+|--------------|------------------|
+| train        | 2012             |
+| validation   | any(defaul=2013) |
+| test         | any              |

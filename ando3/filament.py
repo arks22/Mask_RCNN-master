@@ -49,10 +49,12 @@ class FilamentConfig(Config):
     NUM_CLASSES = 1 + 1  # ARorQRの2通り＋Background
 
     RPN_ANCHOR_SCALES = (128, 256, 512)
+    RPN_ANCHOR_RATIOS = [0.5, 1, 2]
 
     BACKBONE = "resnet50"
 
-    STEPS_PER_EPOCH = 10 #時短用
+    STEPS_PER_EPOCH = 1000
+    #STEPS_PER_EPOCH = 10 #時短用
 
     #IMAGE_MAX_DIM = 768
 
@@ -61,14 +63,12 @@ class FilamentConfig(Config):
 class FilamentDataset(utils.Dataset):
     def load_coco(self, dataset_dir, subset=None,return_coco=False, year=2013):
         if subset=='train':
-            coco = COCO("{}/annotations/datasets_{}.json".format(dataset_dir, subset))
-            image_dir = "{}/{}_jpg".format(dataset_dir, subset)
+            coco = COCO("{}/annotations/datasets_train.json".format(dataset_dir))
+            image_dir = "{}/train_jpg".format(dataset_dir)
 
         else:
-            coco = COCO("{}/annotations/datasets_{}_{}.json".format(dataset_dir, subset, year))
-            if subset == "minival" or subset == "valminusminival":
-                        subset = "val"
-            image_dir = "{}/{}_jpg_{}".format(dataset_dir, subset, year)
+            coco = COCO("{}/annotations/datasets_val_{}.json".format(dataset_dir, year))
+            image_dir = "{}/val_jpg_{}".format(dataset_dir, year)
 
         class_ids = sorted(coco.getCatIds())
         # print("class:{}".format(class_ids))
@@ -315,7 +315,7 @@ if __name__ == '__main__':
         print("Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=4, #sasaki modifyed
+                    epochs=40,
                     layers='heads',
                     augmentation=augmentation)
                 # Training - Stage 2
@@ -323,7 +323,7 @@ if __name__ == '__main__':
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=12,#sasaki modifyed
+                    epochs=120,
                     layers='4+',
                     augmentation=augmentation)
 
@@ -332,7 +332,7 @@ if __name__ == '__main__':
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE / 10,
-                    epochs=16, #sasaki modifyed,
+                    epochs=160,
                     layers='all',
                     augmentation=augmentation)
 
