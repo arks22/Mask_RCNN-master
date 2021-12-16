@@ -15,6 +15,9 @@
 ## Dataset
 
 加工なし
-train      2012
-validation any(defaul=2013)
-test       any
+
+| Task         | Year             |
+|--------------|------------------|
+| train        | 2012             |
+| validation   | any(defaul=2013) |
+| test         | any              |
