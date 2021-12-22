@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("/home/maskrcnn/")
+ROOT_DIR = os.path.abspath("../")
+
+CURRENT_DIR = os.getcwd()
+DEFAULT_DATASET_DIR = os.path.join(CURRENT_DIR, "dataset")
 
 # Device to load the neural network on.
 # Useful if you're training a model on the same 
@@ -31,16 +34,15 @@ from mrcnn import visualize
 from mrcnn.visualize import display_images
 import mrcnn.model as modellib
 from mrcnn.model import log
-import filament_fix
+import filament
 
 args = sys.argv
 #print("args:", args)
 #sys.exit()
-MODEL_DIR =  os.path.join(ROOT_DIR, "logs")
-MODEL_PATH  = args[1]
+MODEL_DIR  =  os.path.join(CURRENT_DIR, "logs")
+MODEL_PATH =  os.path.join(CURRENT_DIR, args[1])
 
-config = filament_fix.FilamentConfig()
-FILAMENT_DIR = "/home/maskrcnn/filament/"
+config = filament.FilamentConfig()
 
 #SAVE_DIR = "/home/maskrcnn/filament/result/predictions/"
 
@@ -63,8 +65,8 @@ def main():
     config = InferenceConfig()
     config.display()
     # 
-    dataset  = filament_fix.FilamentDataset()
-    dataset.load_coco(FILAMENT_DIR,"val")
+    dataset  = filament.FilamentDataset()
+    dataset.load_coco(DEFAULT_DATASET_DIR,"val")
     dataset.prepare()
     print("Images: {}\nClasses: {}".format(len(dataset.image_ids), dataset.class_names))
     with tf.device(DEVICE):
