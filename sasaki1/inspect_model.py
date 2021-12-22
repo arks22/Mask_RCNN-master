@@ -2,7 +2,7 @@
 predict画像出力用のスクリプト
 /logs/学習実行日時/ ディレクトリ中のh5ファイルを引数で指定
 
-$ python3 filament/inspect_model.py filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5 <img_id>
+$ python3 filament/inspect_model.py filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5
 """
 
 import os
@@ -45,6 +45,8 @@ from mrcnn.model import log
 import filament
 
 args = sys.argv
+#print("args:", args)
+#sys.exit()
 
 
 MODEL_DIR  =  os.path.join(CURRENT_DIR, "logs")
@@ -84,8 +86,8 @@ def main():
     print("Loading weights ", weights_path)
     model.load_weights(weights_path, by_name=True)
 
-    #image_id = random.choice(dataset.image_ids)
-    image_id = "20130311182155"
+    image_id = random.choice(dataset.image_ids)
+    #image_id = ""
 
     image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
     info = dataset.image_info[image_id]

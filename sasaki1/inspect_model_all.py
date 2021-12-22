@@ -1,10 +1,3 @@
-"""
-predict画像出力用のスクリプト
-/logs/学習実行日時/ ディレクトリ中のh5ファイルを引数で指定
-
-$ python3 filament/inspect_model.py filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5 <img_id>
-"""
-
 import os
 import sys
 import random
@@ -18,11 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../")
-
-CURRENT_DIR = os.getcwd()
-DEFAULT_DATASET_DIR = os.path.join(CURRENT_DIR, "dataset")
-
+ROOT_DIR = os.path.abspath("/home/maskrcnn/")
 
 # Device to load the neural network on.
 # Useful if you're training a model on the same 
@@ -42,16 +31,16 @@ from mrcnn import visualize
 from mrcnn.visualize import display_images
 import mrcnn.model as modellib
 from mrcnn.model import log
-import filament
+import filament_fix
 
 args = sys.argv
+#print("args:", args)
+#sys.exit()
+MODEL_DIR =  os.path.join(ROOT_DIR, "logs")
+MODEL_PATH  = args[1]
 
-
-MODEL_DIR  =  os.path.join(CURRENT_DIR, "logs")
-MODEL_PATH =  os.path.join(CURRENT_DIR, args[1])
-
-config = filament.FilamentConfig()
-
+config = filament_fix.FilamentConfig()
+FILAMENT_DIR = "/home/maskrcnn/filament/"
 
 #SAVE_DIR = "/home/maskrcnn/filament/result/predictions/"
 
@@ -73,8 +62,9 @@ def get_ax(rows=1, cols=1, size=16):
 def main():
     config = InferenceConfig()
     config.display()
-    dataset  = filament.FilamentDataset()
-    dataset.load_coco(DEFAULT_DATASET_DIR,"val")
+    # 
+    dataset  = filament_fix.FilamentDataset()
+    dataset.load_coco(FILAMENT_DIR,"val")
     dataset.prepare()
     print("Images: {}\nClasses: {}".format(len(dataset.image_ids), dataset.class_names))
     with tf.device(DEVICE):
@@ -84,30 +74,26 @@ def main():
     print("Loading weights ", weights_path)
     model.load_weights(weights_path, by_name=True)
 
-    #image_id = random.choice(dataset.image_ids)
-    image_id = "20130311182155"
+    for i in range(len(dataset.image_ids)):
+        image_id = dataset.image_ids[i]
+        image, image_meta, gt_class_id, gt_bbox, gt_mask =\
+            modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
+        info = dataset.image_info[image_id]
+        print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id, 
+                                            dataset.image_reference(image_id)))
+        # Run object detection
+        results = model.detect([image], verbose=1)
 
-    image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
-    info = dataset.image_info[image_id]
-    print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id, dataset.image_reference(image_id)))
-    print("model filen name: {}".format(MODEL_PATH))
-    # Run object detection
-    results = model.detect([image], verbose=1)
+        # Display results
+        ax = get_ax(1)
+        r = results[0]
 
-    # Display results
-    ax = get_ax(1)
+        visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
+                                    dataset.class_names, r['scores'], ax=ax,
+                                    title=info["id"])
+        log("gt_class_id", gt_class_id)
+        log("gt_bbox", gt_bbox)
+        log("gt_mask", gt_mask)
+        plt.savefig("/home/maskrcnn/filament/result/predictions/{}/prediction_{}.png".format(args[1], info["id"]))
 
-    #resultsの中身にbackgroundのbboxが含まれているのかを確認するために追加した
-    #print(results[0])
-    #sys.exit()
-
-    r = results[0]
-
-    visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
-                                dataset.class_names, r['scores'], ax=ax,
-                                title=info["id"])
-    log("gt_class_id", gt_class_id)
-    log("gt_bbox", gt_bbox)
-    log("gt_mask", gt_mask)
-    plt.savefig("{}/result/predictions/prediction_{}.png".format(CURRENT_DIR,info["id"]))
 main()

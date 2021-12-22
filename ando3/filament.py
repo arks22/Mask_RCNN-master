@@ -5,7 +5,7 @@
 $ python3 filament.py train
 
 検証用
-$ python3 filament.py evaluate
+$ python3 filament.py evaluate --model=last eval_type=xxxx --year=2014
 
 predict画像出力はinspect*.pyを実行
 """
@@ -16,7 +16,7 @@ import time
 import numpy as np
 import imgaug
 
-ROOT_DIR = os.path.abspath("/home/maskrcnn")
+ROOT_DIR = os.path.abspath("../")
 CURRENT_DIR = os.getcwd()
 DEFAULT_LOGS_DIR = os.path.join(CURRENT_DIR, "logs")
 DEFAULT_DATASET_DIR = os.path.join(CURRENT_DIR, "dataset")
@@ -29,7 +29,6 @@ from mrcnn import model as modellib, utils
 from pycocotools.coco import COCO
 from pycocotools import mask as maskUtils
 from pycocotools.cocoeval import COCOeval
-# Path to trained weights file
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
@@ -52,7 +51,6 @@ class FilamentConfig(Config):
 
     BACKBONE = "resnet50"
 
-    STEPS_PER_EPOCH = 1000
     #STEPS_PER_EPOCH = 10 #時短用
 
     #IMAGE_MAX_DIM = 768
@@ -150,6 +148,7 @@ class FilamentDataset(utils.Dataset):
         m = maskUtils.decode(rle)
         return m
 
+
 def build_coco_results(dataset, image_ids, rois, class_ids, scores, masks):
     """Arrange resutls to match COCO specs in http://cocodataset.org/#format
     """
@@ -176,7 +175,8 @@ def build_coco_results(dataset, image_ids, rois, class_ids, scores, masks):
             results.append(result)
     return results
     
-def evaluate_coco(model, dataset, coco, eval_type="bbox", limit=0, image_ids=None):
+
+def evaluate_coco(model, dataset, coco, eval_type=None, limit=0, image_ids=None):
     # Pick COCO images from the dataset
     image_ids = image_ids or dataset.image_ids
 
@@ -250,14 +250,18 @@ if __name__ == '__main__':
                         default=2013,
                         metavar="<image count>",
                         help='Images to use for evaluation (default=500)')
+    parser.add_argument('--eval_type', required=False,
+                        metavar="<evaluate type>",
+                        help='Evaluate Annotation type')
     args = parser.parse_args()
 
-    print("Command: ", args.command)
-    print("Model:   ", args.model)
-    print("Dataset: ", args.dataset)
-    print("Logs:    ", args.logs)
-    print("Limit:   ", args.limit)
-    print("Year:    ", args.year)
+    print("Command:       ", args.command)
+    print("Model:         ", args.model)
+    print("Dataset:       ", args.dataset)
+    print("Logs:          ", args.logs)
+    print("Limit:         ", args.limit)
+    print("Year:          ", args.year)
+    print("Evaluate Type: ", args.eval_type)
 
         # Configurations
     if args.command == "train":
@@ -341,4 +345,7 @@ if __name__ == '__main__':
         coco = dataset_val.load_coco(args.dataset,"val",return_coco=True, year=args.year)
         dataset_val.prepare()
         print("Running COCO evaluation on {} images.".format(args.limit))
-        evaluate_coco(model, dataset_val, coco, "bbox", limit=int(args.limit))
+        if not args.eval_type:
+            print("Error: Please specify the evaluation type.")
+            exit(1)
+        evaluate_coco(model, dataset_val, coco, args.eval_type, limit=int(args.limit))

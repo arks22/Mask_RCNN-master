@@ -2,7 +2,7 @@
 predict画像出力用のスクリプト
 /logs/学習実行日時/ ディレクトリ中のh5ファイルを引数で指定
 
-$ python3 filament/inspect_model.py filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5
+$ python3 filament/inspect_model.py logs/filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5
 """
 
 import os
