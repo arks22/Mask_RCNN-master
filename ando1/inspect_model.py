@@ -2,7 +2,7 @@
 predict画像出力用のスクリプト
 /logs/学習実行日時/ ディレクトリ中のh5ファイルを引数で指定
 
-$ python3 filament/inspect_model.py logs/filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5
+$ python3 filament/inspect_model.py filamentYYYYMMDDTHHMM/mask_rcnn_filament_xxxx.h5 <img_id>
 """
 
 import os
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("/home/maskrcnn/")
+ROOT_DIR = os.path.abspath("../")
 
 CURRENT_DIR = os.getcwd()
 DEFAULT_DATASET_DIR = os.path.join(CURRENT_DIR, "dataset")
@@ -45,8 +45,6 @@ from mrcnn.model import log
 import filament
 
 args = sys.argv
-#print("args:", args)
-#sys.exit()
 
 
 MODEL_DIR  =  os.path.join(CURRENT_DIR, "logs")
@@ -78,6 +76,15 @@ def main():
     dataset  = filament.FilamentDataset()
     dataset.load_coco(DEFAULT_DATASET_DIR,"val")
     dataset.prepare()
+
+    #image_id = random.choice(dataset.image_ids)
+
+    image_date = args[2]
+    for index, item in enumerate(dataset.image_info):
+        if item["id"] == image_date:
+            image_id = index
+            break
+
     print("Images: {}\nClasses: {}".format(len(dataset.image_ids), dataset.class_names))
     with tf.device(DEVICE):
         model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR,
@@ -85,9 +92,6 @@ def main():
     weights_path = MODEL_PATH
     print("Loading weights ", weights_path)
     model.load_weights(weights_path, by_name=True)
-
-    image_id = random.choice(dataset.image_ids)
-    #image_id = ""
 
     image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
     info = dataset.image_info[image_id]
@@ -99,10 +103,6 @@ def main():
     # Display results
     ax = get_ax(1)
 
-    #resultsの中身にbackgroundのbboxが含まれているのかを確認するために追加した
-    #print(results[0])
-    #sys.exit()
-
     r = results[0]
 
     visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
@@ -111,5 +111,6 @@ def main():
     log("gt_class_id", gt_class_id)
     log("gt_bbox", gt_bbox)
     log("gt_mask", gt_mask)
-    plt.savefig("{}/result/predictions/prediction_{}.png".format(CURRENT_DIR,info["id"]))
+    dirname = os.path.basename(CURRENT_DIR)
+    plt.savefig("{}/result/predictions/{}_prediction_{}.png".format(CURRENT_DIR,dirname,info["id"]))
 main()
