@@ -113,4 +113,5 @@ def main():
     log("gt_mask", gt_mask)
     dirname = os.path.basename(CURRENT_DIR)
     plt.savefig("{}/result/predictions/{}_prediction_{}.png".format(CURRENT_DIR,dirname,info["id"]))
+
 main()

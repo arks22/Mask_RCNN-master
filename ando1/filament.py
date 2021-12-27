@@ -5,7 +5,7 @@
 $ python3 filament.py train
 
 検証用
-$ python3 filament.py evaluate --year=2014
+$ python3 filament.py evaluate --model=last eval_type=xxxx --year=2014
 
 predict画像出力はinspect*.pyを実行
 """
@@ -29,7 +29,6 @@ from mrcnn import model as modellib, utils
 from pycocotools.coco import COCO
 from pycocotools import mask as maskUtils
 from pycocotools.cocoeval import COCOeval
-# Path to trained weights file
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
