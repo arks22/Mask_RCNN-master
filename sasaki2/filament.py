@@ -1,11 +1,11 @@
 """
-安藤さん卒研の実験1のスクリプト
+佐々木実験2のスクリプト
 
 学習用
 $ python3 filament.py train
 
 検証用
-$ python3 filament.py evaluate --model=last --eval_type=xxxx --year=2014
+$ python3 filament.py evaluate --model=last --eval_type=xxxx --year=xxxxx
 
 predict画像出力はinspect*.pyを実行
 """
@@ -46,12 +46,12 @@ class FilamentConfig(Config):
     # Number of classes (including background)
     NUM_CLASSES = 1 + 1  # ARorQRの2通り＋Background
 
-    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512) #default
-    RPN_ANCHOR_RATIOS = [0.5, 1, 2]
+    RPN_ANCHOR_SCALES = (128, 256, 512)
+    RPN_ANCHOR_RATIOS = [0.5, 0.75, 1, 1.5, 2,]
 
     BACKBONE = "resnet50"
 
-    #STEPS_PER_EPOCH = 10 #時短用
+    #STEPS_PER_EPOCH = 5#デバッグ用
 
     #IMAGE_MAX_DIM = 768
 
@@ -174,7 +174,7 @@ def build_coco_results(dataset, image_ids, rois, class_ids, scores, masks):
             results.append(result)
     return results
     
-def evaluate_coco(model, dataset, coco, eval_type="bbox", limit=0, image_ids=None):
+def evaluate_coco(model, dataset, coco, eval_type=None, limit=0, image_ids=None):
     # Pick COCO images from the dataset
     image_ids = image_ids or dataset.image_ids
 
@@ -248,14 +248,18 @@ if __name__ == '__main__':
                         default=2013,
                         metavar="<image count>",
                         help='Images to use for evaluation (default=500)')
+    parser.add_argument('--eval_type', required=False,
+                        metavar="<evaluate type>",
+                        help='Evaluate Annotation type')
     args = parser.parse_args()
 
-    print("Command: ", args.command)
-    print("Model:   ", args.model)
-    print("Dataset: ", args.dataset)
-    print("Logs:    ", args.logs)
-    print("Limit:   ", args.limit)
-    print("Year:    ", args.year)
+    print("Command:       ", args.command)
+    print("Model:         ", args.model)
+    print("Dataset:       ", args.dataset)
+    print("Logs:          ", args.logs)
+    print("Limit:         ", args.limit)
+    print("Year:          ", args.year)
+    print("Evaluate Type: ", args.eval_type)
 
         # Configurations
     if args.command == "train":
@@ -312,7 +316,7 @@ if __name__ == '__main__':
         print("Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=40, #sasaki modifyed
+                    epochs=40,
                     layers='heads',
                     augmentation=augmentation)
                 # Training - Stage 2
@@ -320,7 +324,7 @@ if __name__ == '__main__':
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=120,#sasaki modifyed
+                    epochs=120,
                     layers='4+',
                     augmentation=augmentation)
 
@@ -329,7 +333,7 @@ if __name__ == '__main__':
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE / 10,
-                    epochs=160, #sasaki modifyed,
+                    epochs=160,
                     layers='all',
                     augmentation=augmentation)
 
@@ -339,4 +343,7 @@ if __name__ == '__main__':
         coco = dataset_val.load_coco(args.dataset,"val",return_coco=True, year=args.year)
         dataset_val.prepare()
         print("Running COCO evaluation on {} images.".format(args.limit))
-        evaluate_coco(model, dataset_val, coco, "bbox", limit=int(args.limit))
+        if not args.eval_type:
+            print("Error: Please specify the evaluation type.")
+            exit(1)
+        evaluate_coco(model, dataset_val, coco, args.eval_type, limit=int(args.limit))

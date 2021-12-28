@@ -5,7 +5,7 @@
 $ python3 filament.py train
 
 検証用
-$ python3 filament.py evaluate --model=last eval_type=xxxx --year=2014
+$ python3 filament.py evaluate --model=last --eval_type=xxxx --year=2014
 
 predict画像出力はinspect*.pyを実行
 """
@@ -124,6 +124,8 @@ class FilamentDataset(utils.Dataset):
             return mask, class_ids
         else:
             return super(FilamentDataset, self).load_mask(image_id)
+
+
     def annToRLE(self, ann, height, width):
         segm = ann['segmentation']
         if isinstance(segm, list):

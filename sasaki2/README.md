@@ -1,6 +1,6 @@
-# 佐々木実験1
+# 佐々木実験2
 
-細長いアンカースケールを追加
+正方形に近いアンカースケールを追加
 
 ## Configurations(hyper parameters)
 
@@ -8,7 +8,7 @@
 
 | Parameter              |Value                   |
 |------------------------|------------------------|
-|**RPN_ANCHOR_RATIOS**   |[0.25, 0.5, 1, 2, 4]    |
+|**RPN_ANCHOR_RATIOS**   |[0.5, 0.75, 1, 1.5, 2]  |
 |**RPN_ANCHOR_SCALES**   |(128, 256, 512)         |
 |**RPN_ANCHOR_STRIDE**   |1                       |
 

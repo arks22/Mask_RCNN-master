@@ -5,7 +5,7 @@
 $ python3 filament.py train
 
 検証用
-$ python3 filament.py evaluate --model=last eval_type=xxxx --year=2014
+$ python3 filament.py evaluate --model=last --eval_type=xxxx --year=2014
 
 predict画像出力はinspect*.pyを実行
 """
