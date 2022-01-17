@@ -1,5 +1,7 @@
 """
 佐々木実験2のスクリプト
+正方形に近いANCHOR RATIOSを追加
+RPN_ANCHOR_RATIOS = [0.5, 0.75, 1, 1.5, 2,]
 
 学習用
 $ python3 filament.py train

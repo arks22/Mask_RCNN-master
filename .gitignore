@@ -8,6 +8,9 @@ train_jpg/
 val_*/
 
 train/
+loss_log/
+*.png
+*.json
 
 logs/
 *.h5
