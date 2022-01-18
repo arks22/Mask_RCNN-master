@@ -1,7 +1,7 @@
 """
 佐々木実験16のスクリプト
-EMAJEarlyStoppingを追加
-STEPS_PER_EPOCH = 850
+EMAEarlyStoppingを採用
+EMAES_PATIENCE = 10
 
 学習用
 $ python3 filament.py train
@@ -50,6 +50,7 @@ warnings.filterwarnings("ignore")
 ########## Config ########### 
 
 MODEL = "ImageNet"
+EMAES_PATIENCE = 10
 
 class FilamentConfig(Config):
     # Give the configuration a recognizable name
@@ -67,7 +68,7 @@ class FilamentConfig(Config):
 
     BACKBONE = "resnet50"
 
-    STEPS_PER_EPOCH = 850
+    STEPS_PER_EPOCH = 850 
 
     #IMAGE_MAX_DIM = 768
 
@@ -168,7 +169,7 @@ class GetLosses(keras.callbacks.Callback):
         self.val_mrcnn_mask_loss  = [0] * 1000
 
     def on_epoch_end(self, epoch, logs={}):
-        n = epoch - 1
+        n = epoch
         self.train_loss[n]           = logs['loss']
         self.rpn_bbox_loss[n]        = logs['rpn_bbox_loss']
         self.rpn_class_loss[n]       = logs['rpn_class_loss']
@@ -184,40 +185,45 @@ class GetLosses(keras.callbacks.Callback):
 
 
 class EMAEarlyStopping(keras.callbacks.Callback):
-    def __init__(self, patience=0, ema_range=0, logdir):
-        self.patience       = patience
-        self.ema_range      = ema_range
-        self.logdir         = logdir
-        self.best_score     = 100.00
-        self.best_epoch     = 0
-        self.wait       = 0
+    def __init__(self, log_dir, patience=0 ):
+        self.ema         = [100.00] * 1000
+        self.ema_weight  = 0.7 
+        self.log_dir     = log_dir
+        self.best_epoch  = 0
+        self.patience    = patience
+
+    def on_train_begin(self, logs={}):
+        self.best_score  = 100.00
+        self.wait = 0
 
     def on_epoch_end(self, epoch, logs={}):
-        if epoch >= self.ema_range:
-            #Calculate EMA
-            ema = 2.00
-            if self.best_score > ema:
-                self.best_score = ema
-                self.best_epoch = epoch
-                self.wait = 0
-            else:
-                self.wait += 1
-                if self.wait >= patience:
-                    self.stopped_epoch = epoch
-                    self.model.stop_training = True
+        if epoch == 0:
+            self.ema[0] = logs['val_loss']
+        else:
+            self.ema[epoch] = (1-self.ema_weight) * logs['val_loss'] + self.ema_weight * self.ema[epoch-1]
+        
+        if self.best_score > self.ema[epoch]:
+            self.best_score = self.ema[epoch]
+            self.best_epoch = epoch
+            self.wait = 0
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.stopped_epoch = epoch
+                self.model.stop_training = True
 
-        print("EMA val_loss: " + ema)
+        print("EMA val_loss: " + str(self.ema[epoch]))
 
-    def on_train_end(self):
+    def on_train_end(self,logs={}):
         print("Restoring model weights from the end of the best epoch.")
-        print("Best epoch: " + self.best_epoch)
-        print("Best EMA val_loss: " + self.best_score)
+        print("Best epoch: " + str(self.best_epoch + 1))
+        print("Best EMA val_loss: " + str(self.best_score))
 
         #Delete h5 files after the best epoch
         for i in range(self.patience):
             num = str(self.best_epoch + i + 1).zfill(4)
             os.remove(self.log_dir + '/mask_rcnn_filament_' + num + '.h5')
-
+            print("removed: mask_rcnn_filament_"  + num + "h5") 
 
 
 
@@ -299,7 +305,6 @@ def evaluate_coco(model, dataset, coco, eval_type=None, limit=0, image_ids=None)
 def dump_loss(get_losses, best_epoch, timestamp):
     #Dump result to json
     js = cl.OrderedDict()
-    best_epoch = best_epoch - 1
 
     js["train_loss"]       = get_losses.train_loss[0:best_epoch]
     js["rpn_class_loss"]   = get_losses.rpn_class_loss[0:best_epoch]
@@ -424,8 +429,7 @@ if __name__ == '__main__':
         augmentation = imgaug.augmenters.Fliplr(0.5)
 
         #EarlyStopping
-        patience = 10
-        early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=patience, verbose=1, mode='auto')
+        early_stopping = EMAEarlyStopping(patience=EMAES_PATIENCE,log_dir=model.log_dir)
 
         #GetLosses
         get_losses = GetLosses()
@@ -438,8 +442,7 @@ if __name__ == '__main__':
                     layers='heads',
                     augmentation=augmentation,
                     custom_callbacks=[early_stopping,get_losses])
-        stopped_epoch = early_stopping.stopped_epoch
-        model.epoch = stopped_epoch - patience 
+        model.epoch = early_stopping.best_epoch + 1
 
         # Training - Stage 2
         #Finetune layers from ResNet stage 4 and up
@@ -450,8 +453,7 @@ if __name__ == '__main__':
                     layers='4+',
                     augmentation=augmentation,
                     custom_callbacks=[early_stopping,get_losses])
-        stopped_epoch = early_stopping.stopped_epoch
-        model.epoch = stopped_epoch - patience
+        model.epoch = early_stopping.best_epoch + 1
 
         # Training - Stage 3
         # Fine tune all layers
@@ -462,12 +464,10 @@ if __name__ == '__main__':
                     layers='all',
                     augmentation=augmentation,
                     custom_callbacks=[early_stopping,get_losses])
-        stopped_epoch = early_stopping.stopped_epoch
-        best_epoch = stopped_epoch - patience
+        model.epoch = early_stopping.best_epoch + 1
 
         timestamp = os.path.basename(model.log_dir)
-        dump_loss(get_losses, best_epoch - 1, timestamp)
-
+        dump_loss(get_losses, early_stopping.best_epoch, timestamp)
 
 
         print("---------------------------------------")

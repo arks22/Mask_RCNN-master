@@ -1,5 +1,5 @@
 """
-佐々木実験14のスクリプト
+佐々木実験15のスクリプト
 EarlyStoppingを追加
 patience=10
 STEPS_PER_EPOCH = 850
