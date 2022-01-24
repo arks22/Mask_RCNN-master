@@ -73,16 +73,21 @@ def generate_pic(dataset, config, image_id):
     image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
     info = dataset.image_info[image_id]
     # Run object detection
-    results = model.detect([image], verbose=1)
+    results = model.detect([image])
 
     # Display results
     ax = get_ax(1)
     r = results[0]
 
+    print(image_id)
+    print(r['rois'])
+    print(r['scores'])
+    """
     visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], dataset.class_names, r['scores'], ax=ax,title=info["id"])
 
     dirname = os.path.basename(CURRENT_DIR)
     plt.savefig("{}/result/predictions/{}_prediction_{}.png".format(CURRENT_DIR,dirname,info["id"]))
+    """
 
 
 if __name__ == '__main__':
@@ -102,7 +107,6 @@ if __name__ == '__main__':
     else:
         model_path = os.path.join(CURRENT_DIR, args[1])
 
-    print("model filen name: {}".format(model_path))
     weights_path = model_path
     print("Loading weights ", weights_path)
     model.load_weights(weights_path, by_name=True)

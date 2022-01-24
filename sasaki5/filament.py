@@ -19,6 +19,8 @@ import sys
 import time
 import numpy as np
 import imgaug
+import json
+import collections as cl
 
 ROOT_DIR = os.path.abspath("../")
 CURRENT_DIR = os.getcwd()
@@ -36,6 +38,7 @@ from pycocotools.cocoeval import COCOeval
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
+import keras
 
 
 
@@ -55,7 +58,8 @@ class FilamentConfig(Config):
 
     BACKBONE = "resnet50"
 
-    #STEPS_PER_EPOCH = 1#デバッグ用
+    STEPS_PER_EPOCH = 1#デバッグ用
+    VALIDATION_STEPS = 1#デバッグ用
 
 
     #IMAGE_MAX_DIM = 768
@@ -224,6 +228,59 @@ def evaluate_coco(model, dataset, coco, eval_type=None, limit=0, image_ids=None)
         t_prediction, t_prediction / len(image_ids)))
     print("Total time: ", time.time() - t_start)
 
+class GetLosses(keras.callbacks.Callback):
+    def __init__(self):
+        self.train_loss           = [0] * 1000
+        self.rpn_class_loss       = [0] * 1000
+        self.rpn_bbox_loss        = [0] * 1000
+        self.mrcnn_class_loss     = [0] * 1000
+        self.mrcnn_bbox_loss      = [0] * 1000
+        self.mrcnn_mask_loss      = [0] * 1000
+        self.val_loss             = [0] * 1000
+        self.val_rpn_class_loss   = [0] * 1000
+        self.val_rpn_bbox_loss    = [0] * 1000
+        self.val_mrcnn_class_loss = [0] * 1000
+        self.val_mrcnn_bbox_loss  = [0] * 1000
+        self.val_mrcnn_mask_loss  = [0] * 1000
+
+    def on_epoch_end(self, epoch, logs={}):
+        n = epoch
+        self.train_loss[n]           = logs['loss']
+        self.rpn_bbox_loss[n]        = logs['rpn_bbox_loss']
+        self.rpn_class_loss[n]       = logs['rpn_class_loss']
+        self.mrcnn_class_loss[n]     = logs['mrcnn_class_loss']
+        self.mrcnn_bbox_loss[n]      = logs['mrcnn_bbox_loss']
+        self.mrcnn_mask_loss[n]      = logs['mrcnn_mask_loss']
+        self.val_loss[n]             = logs['val_loss']
+        self.val_rpn_bbox_loss[n]    = logs['val_rpn_bbox_loss']
+        self.val_rpn_class_loss[n]   = logs['val_rpn_class_loss']
+        self.val_mrcnn_class_loss[n] = logs['val_mrcnn_class_loss']
+        self.val_mrcnn_bbox_loss[n]  = logs['val_mrcnn_bbox_loss']
+        self.val_mrcnn_mask_loss[n]  = logs['val_mrcnn_mask_loss']
+
+def dump_loss(get_losses, best_epoch, timestamp):
+    #Dump result to json
+    js = cl.OrderedDict()
+
+    js["train_loss"]       = get_losses.train_loss[0:best_epoch]
+    js["rpn_class_loss"]   = get_losses.rpn_class_loss[0:best_epoch]
+    js["rpn_bbox_loss"]    = get_losses.rpn_bbox_loss[0:best_epoch]
+    js["mrcnn_class_loss"] = get_losses.mrcnn_class_loss[0:best_epoch]
+    js["mrcnn_bbox_loss"]  = get_losses.mrcnn_bbox_loss[0:best_epoch]
+    js["mrcnn_mask_loss"]  = get_losses.mrcnn_mask_loss[0:best_epoch]
+    js["val_loss"]             = get_losses.val_loss[0:best_epoch]
+    js["val_rpn_class_loss"]   = get_losses.val_rpn_class_loss[0:best_epoch]
+    js["val_rpn_bbox_loss"]    = get_losses.val_rpn_bbox_loss[0:best_epoch]
+    js["val_mrcnn_class_loss"] = get_losses.val_mrcnn_class_loss[0:best_epoch]
+    js["val_mrcnn_bbox_loss"]  = get_losses.val_mrcnn_bbox_loss[0:best_epoch]
+    js["val_mrcnn_mask_loss"]  = get_losses.val_mrcnn_mask_loss[0:best_epoch]
+
+    jsonfilename = 'loss_log/loss_' + timestamp + '.json'
+    fw = open(jsonfilename,'w')
+    json.dump(js,fw)
+    print("Saved losses to : " + jsonfilename) 
+
+
 if __name__ == '__main__':
     import argparse
         # Parse command line arguments
@@ -312,6 +369,9 @@ if __name__ == '__main__':
         dataset_val.load_coco(args.dataset,"val",year=args.year)
         dataset_val.prepare()
 
+        #GetLosses
+        get_losses = GetLosses()
+
         # Image Augmentation
         # Right/Left flip 50% of the time
         augmentation = imgaug.augmenters.Fliplr(0.5)
@@ -322,6 +382,7 @@ if __name__ == '__main__':
                     learning_rate=config.LEARNING_RATE,
                     epochs=20,
                     layers='heads',
+                    custom_callbacks=[get_losses],
                     augmentation=augmentation)
                 # Training - Stage 2
         #Finetune layers from ResNet stage 4 and up
@@ -330,6 +391,7 @@ if __name__ == '__main__':
                     learning_rate=config.LEARNING_RATE,
                     epochs=60,
                     layers='4+',
+                    custom_callbacks=[get_losses],
                     augmentation=augmentation)
 
         # Training - Stage 3
@@ -339,7 +401,11 @@ if __name__ == '__main__':
                     learning_rate=config.LEARNING_RATE / 10,
                     epochs=80,
                     layers='all',
+                    custom_callbacks=[get_losses],
                     augmentation=augmentation)
+
+        timestamp = os.path.basename(model.log_dir)
+        dump_loss(get_losses, 80, timestamp)
 
     elif args.command == "evaluate":
         # Validation dataset

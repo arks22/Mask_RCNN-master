@@ -55,6 +55,7 @@ def ema_loss(data):
     ax.legend(bbox_to_anchor=(1, 1), loc='upper right', borderaxespad=1)
     ax.grid()
 
+    fig.patch.set_alpha(0)
     fig.savefig("loss_log/ema_loss.png",format="png",dpi=300)
 
 
@@ -98,6 +99,7 @@ def losses(data):
     axes[1,2].grid()
 
     fig.tight_layout()
+    fig.patch.set_alpha(0)
     fig.savefig("loss_log/losses.png",format="png",dpi=300)
 
 
@@ -105,8 +107,8 @@ def main():
     json_file = open(JSON_FILE, 'r')
     data = json.load(json_file)
 
-    losses(data)
-    #ema_loss(data)
+    #losses(data)
+    ema_loss(data)
 
 
 if __name__=='__main__':

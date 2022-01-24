@@ -89,7 +89,7 @@ if __name__ == '__main__':
     config = InferenceConfig()
     config.display()
     dataset  = filament.FilamentDataset()
-    dataset.load_coco(DEFAULT_DATASET_DIR,"val")
+    dataset.load_coco(DEFAULT_DATASET_DIR,"val",year=2016)
     dataset.prepare()
 
     print("Images: {}\nClasses: {}".format(len(dataset.image_ids), dataset.class_names))

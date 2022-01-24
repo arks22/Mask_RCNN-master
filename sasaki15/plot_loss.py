@@ -55,6 +55,7 @@ def ema_loss(data):
     ax.legend()
     ax.grid()
 
+    fig.patch.set_alpha(0)
     fig.savefig("loss_log/ema_loss.png",format="png",dpi=300)
 
 

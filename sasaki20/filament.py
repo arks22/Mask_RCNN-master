@@ -1,8 +1,5 @@
 """
-佐々木実験17のスクリプト
-EMAEarlyStoppingを採用
-EMAES_PATIENCE = 10
-SCALEを調整
+佐々木実験19のスクリプト
 
 学習用
 $ python3 filament.py train
@@ -51,7 +48,7 @@ warnings.filterwarnings("ignore")
 ########## Config ########### 
 
 MODEL = "ImageNet"
-EMAES_PATIENCE = 12
+EMAES_PATIENCE = 15
 
 class FilamentConfig(Config):
     # Give the configuration a recognizable name
@@ -66,11 +63,13 @@ class FilamentConfig(Config):
 
     RPN_ANCHOR_SCALES = (32,64,128, 256)
     BACKBONE_STRIDES = [4, 8, 16, 32]
-    RPN_ANCHOR_RATIOS = [0.5, 1, 2,]
+    RPN_ANCHOR_RATIOS = [0.25, 0.5, 1, 2, 4]
 
     BACKBONE = "resnet50"
 
-    STEPS_PER_EPOCH = 850
+    STEPS_PER_EPOCH = 5 
+
+    NMS_COVER_THRESHOLD = 0.05
 
     #IMAGE_MAX_DIM = 768
 
@@ -231,6 +230,90 @@ class EMAEarlyStopping(keras.callbacks.Callback):
             num = str(self.best_epoch + i + 1).zfill(4)
             os.remove(self.log_dir + '/mask_rcnn_filament_' + num + '.h5')
             print("removed: mask_rcnn_filament_"  + num + "h5") 
+
+
+class Merge_Proposal(mrcnn.ProposalLayer):
+    def call(self, inputs):
+        # Box Scores. Use the foreground class confidence. [Batch, num_rois, 1]
+        scores = inputs[0][:, :, 1]
+        # Box deltas [batch, num_rois, 4]
+        deltas = inputs[1]
+        deltas = deltas * np.reshape(self.config.RPN_BBOX_STD_DEV, [1, 1, 4])
+        # Anchors
+        anchors = inputs[2]
+
+        # Improve performance by trimming to top anchors by score
+        # and doing the rest on the smaller subset.
+        pre_nms_limit = tf.minimum(self.config.PRE_NMS_LIMIT, tf.shape(anchors)[1])
+        ix = tf.nn.top_k(scores, pre_nms_limit, sorted=True,
+                         name="top_anchors").indices
+        scores = utils.batch_slice([scores, ix], lambda x, y: tf.gather(x, y),
+                                   self.config.IMAGES_PER_GPU)
+        deltas = utils.batch_slice([deltas, ix], lambda x, y: tf.gather(x, y),
+                                   self.config.IMAGES_PER_GPU)
+        pre_nms_anchors = utils.batch_slice([anchors, ix], lambda a, x: tf.gather(a, x),
+                                    self.config.IMAGES_PER_GPU,
+                                    names=["pre_nms_anchors"])
+
+        # Apply deltas to anchors to get refined anchors.
+        # [batch, N, (y1, x1, y2, x2)]
+        boxes = utils.batch_slice([pre_nms_anchors, deltas],
+                                  lambda x, y: apply_box_deltas_graph(x, y),
+                                  self.config.IMAGES_PER_GPU,
+                                  names=["refined_anchors"])
+
+        # Clip to image boundaries. Since we're in normalized coordinates,
+        # clip to 0..1 range. [batch, N, (y1, x1, y2, x2)]
+        window = np.array([0, 0, 1, 1], dtype=np.float32)
+        boxes = utils.batch_slice(boxes,
+                                  lambda x: clip_boxes_graph(x, window),
+                                  self.config.IMAGES_PER_GPU,
+                                  names=["refined_anchors_clipped"])
+
+        # Filter out small boxes
+        # According to Xinlei Chen's paper, this reduces detection accuracy
+        # for small objects, so we're skipping it.
+
+
+        def generate_cover_bbox(boxes, scores, proposal_count, cover_threshold):
+            print("cover!")
+            i = 0
+            while True:
+                generate_counter = 0
+                generate_boxes =  np.array([])
+                for box in boxes:
+                    ious = utils.compute_iou(box,boxes)
+                    index = np.where((ious >= cover_threshold) & (ious < 1.00000))
+                    share_boxes = boxes[index]
+                    if len(share_boxes) > 0:
+                        ymin = numpy.minimum(share_boxes[:,0],box[0])
+                        xmin = numpy.minimum(share_boxes[:,0],box[0])
+                        ymax = numpy.maximum(share_boxes[:,0],box[0])
+                        xmax = numpy.maximum(share_boxes[:,0],box[0])
+
+                        boxes = [ymin,xmin,ymax,xmax].tanspose()
+                        generate_boxes = numpy.append(generate_boxes,boxes, axis=0)
+                        generate_counter += 1
+
+                if generate_counter == 0: break
+                boxes = numpy.append(boxes,generate_boxes,axis=0)
+
+
+        # Non-max suppression
+        def nms(boxes, scores):
+            indices = generate_cover_bbox(boxes, scores, self.proposal_count, self.config.NMS_COVER_THRESHOLD)
+            indices = tf.image.non_max_suppression(boxes, scores, self.proposal_count, self.nms_threshold, name="rpn_non_max_suppression")
+
+            proposals = tf.gather(boxes, indices)
+            # Pad if needed
+            padding = tf.maximum(self.proposal_count - tf.shape(proposals)[0], 0)
+            proposals = tf.pad(proposals, [(0, padding), (0, 0)])
+            return proposals
+
+        proposals = utils.batch_slice([boxes, scores], nms, self.config.IMAGES_PER_GPU)
+
+        return proposals
+
 
 
 def build_coco_results(dataset, image_ids, rois, class_ids, scores, masks):
@@ -444,7 +527,7 @@ if __name__ == '__main__':
         print("Stage 1 - Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=1000,
+                    epochs=1,
                     layers='heads',
                     augmentation=augmentation,
                     custom_callbacks=[early_stopping,get_losses])
@@ -455,7 +538,7 @@ if __name__ == '__main__':
         print("Stage 2 - Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=2000,
+                    epochs=2,
                     layers='4+',
                     augmentation=augmentation,
                     custom_callbacks=[early_stopping,get_losses])

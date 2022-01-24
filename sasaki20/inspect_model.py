@@ -73,7 +73,7 @@ def generate_pic(dataset, config, image_id):
     image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
     info = dataset.image_info[image_id]
     # Run object detection
-    results = model.detect([image], verbose=1)
+    results = model.detect([image])
 
     # Display results
     ax = get_ax(1)

@@ -312,7 +312,7 @@ class ProposalLayer(KE.Layer):
 
         # Filter out small boxes
         # According to Xinlei Chen's paper, this reduces detection accuracy
-        # for small objects, so we're skipping it.
+        # for small objects, so we're skipping i
 
         # Non-max suppression
         def nms(boxes, scores):

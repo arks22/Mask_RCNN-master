@@ -1,8 +1,6 @@
 """
-佐々木実験17のスクリプト
-EMAEarlyStoppingを採用
-EMAES_PATIENCE = 10
-SCALEを調整
+佐々木実験19のスクリプト
+NMS = 0.2
 
 学習用
 $ python3 filament.py train
@@ -51,7 +49,7 @@ warnings.filterwarnings("ignore")
 ########## Config ########### 
 
 MODEL = "ImageNet"
-EMAES_PATIENCE = 12
+EMAES_PATIENCE = 15
 
 class FilamentConfig(Config):
     # Give the configuration a recognizable name
@@ -66,7 +64,9 @@ class FilamentConfig(Config):
 
     RPN_ANCHOR_SCALES = (32,64,128, 256)
     BACKBONE_STRIDES = [4, 8, 16, 32]
-    RPN_ANCHOR_RATIOS = [0.5, 1, 2,]
+    RPN_ANCHOR_RATIOS = [0.25, 0.5, 1, 2, 4]
+
+    RPN_NMS_THRESHOLD = 0.2
 
     BACKBONE = "resnet50"
 
